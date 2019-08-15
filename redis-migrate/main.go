@@ -101,12 +101,12 @@ func migrateByType() {
 						Min: "-inf",
 						Max: "+inf",
 					}
-					v, err := srcClient.ZRangeByScoreWithScores(key, rangeBy).Result()
+					v, err := srcClient.ZRangeByScoreWithScores(key, &rangeBy).Result()
 					if err != nil {
 						fmt.Println(err)
 					}
 					for _, z := range v {
-						err = dstClient.ZAdd(key, z).Err()
+						err = dstClient.ZAdd(key, &z).Err()
 						if err != nil {
 							panic(err)
 						}
