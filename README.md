@@ -1,7 +1,15 @@
-# Utilities
+# redis-migrate
 
-Utilities created with the purpose of improve my skill on golang
+## setup
 
-## redis-migrate
+```
+brew install redis
+./setup.sh start
+cat sample.txt | redis-cli --pipe
+```
 
-Migrate all key from one redis to another.
+## run
+
+```
+go run main.go
+```
