@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 
 	"flag"
 	"fmt"
