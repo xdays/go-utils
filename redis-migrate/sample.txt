@@ -1,0 +1,12 @@
+SET test1 test
+RPUSH test2 a
+RPUSH test2 b
+RPUSH test2 c
+SADD test3 a
+SADD test3 b
+SADD test3 c
+HSET test4 foo1 bar1
+HSET test4 foo2 bar2
+ZADD test5 1 a
+ZADD test5 2 b
+ZADD test5 3 c
