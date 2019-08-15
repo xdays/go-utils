@@ -1,4 +1,4 @@
-module github.com/xdays/go-utils
+module github.com/xdays/go-utils/redis-migrate
 
 go 1.12
 

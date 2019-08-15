@@ -17,4 +17,4 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Get dependencies and vet code
-      run: go vet .
+      run: cd redis-migrate && go vet .
