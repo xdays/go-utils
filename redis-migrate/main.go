@@ -3,16 +3,17 @@ package main
 import (
 	"github.com/go-redis/redis"
 
+	"flag"
 	"fmt"
 	"os"
 	"time"
 )
 
-func getClient(hostname string, port int, db int) *redis.Client {
+func getClient(hp string, db int) *redis.Client {
 	client := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", hostname, port),
+		Addr:     hp,
 		Password: "", // no password set
-		DB:       0,  // use default DB
+		DB:       db, // use default DB
 	})
 
 	_, err := client.Ping().Result()
@@ -24,17 +25,17 @@ func getClient(hostname string, port int, db int) *redis.Client {
 }
 
 // this func may used for incremental migration in future
-func migrateByType() {
+func migrateByType(src string, dest string, count int64) {
 
 	var cursor uint64
 	var err error
 
-	srcClient := getClient("localhost", 6379, 0)
-	dstClient := getClient("localhost", 6380, 0)
+	srcClient := getClient(src, 0)
+	dstClient := getClient(dest, 0)
 
 	for {
 		var keys []string
-		if keys, cursor, err = srcClient.Scan(cursor, "", 100).Result(); err != nil {
+		if keys, cursor, err = srcClient.Scan(cursor, "", count).Result(); err != nil {
 			fmt.Printf("ERROR: %s\n", err)
 			os.Exit(2)
 		}
@@ -46,7 +47,7 @@ func migrateByType() {
 				if err != nil {
 					panic(err)
 				}
-				fmt.Printf("start migrating %s key %s\n", t, key)
+				fmt.Printf("start migrating %s key %s incrementally\n", t, key)
 				if t == "string" {
 					v, err := srcClient.Get(key).Result()
 					if err != nil {
@@ -64,7 +65,7 @@ func migrateByType() {
 					}
 					e, err := dstClient.Exists(key).Result()
 					if e == 1 {
-						fmt.Printf("delete list %s before migrate", key)
+						fmt.Printf("delete list %s before migrate\n", key)
 						dstClient.Del(key).Result()
 					}
 					err = dstClient.RPush(key, v).Err()
@@ -101,12 +102,12 @@ func migrateByType() {
 						Min: "-inf",
 						Max: "+inf",
 					}
-					v, err := srcClient.ZRangeByScoreWithScores(key, &rangeBy).Result()
+					v, err := srcClient.ZRangeByScoreWithScores(key, rangeBy).Result()
 					if err != nil {
 						fmt.Println(err)
 					}
 					for _, z := range v {
-						err = dstClient.ZAdd(key, &z).Err()
+						err = dstClient.ZAdd(key, z).Err()
 						if err != nil {
 							panic(err)
 						}
@@ -121,16 +122,16 @@ func migrateByType() {
 	}
 }
 
-func migrateByDump() {
+func migrateByDump(src string, dest string, count int64) {
 	var cursor uint64
 	var err error
 
-	srcClient := getClient("localhost", 6379, 0)
-	dstClient := getClient("localhost", 6380, 0)
+	srcClient := getClient(src, 0)
+	dstClient := getClient(dest, 0)
 
 	for {
 		var keys []string
-		if keys, cursor, err = srcClient.Scan(cursor, "", 100).Result(); err != nil {
+		if keys, cursor, err = srcClient.Scan(cursor, "", count).Result(); err != nil {
 			fmt.Printf("ERROR: %s\n", err)
 			os.Exit(2)
 		}
@@ -138,7 +139,7 @@ func migrateByDump() {
 		if len(keys) > 0 {
 			fmt.Printf("found %d keys\n", len(keys))
 			for _, key := range keys {
-				fmt.Printf("start migrating key %s\n", key)
+				fmt.Printf("start migrating key %s from scratch\n", key)
 				r, _ := srcClient.Dump(key).Result()
 				dstClient.Del(key).Result()
 				dstClient.Restore(key, 0, r)
@@ -158,5 +159,15 @@ func migrateByDump() {
 }
 
 func main() {
-	migrateByDump()
+	source := flag.String("s", "127.0.0.1:6379", "source redis host:port")
+	dest := flag.String("d", "127.0.0.1:6380", "dest redis host:port")
+	count := flag.Int64("c", 1000, "count of keys returned from scan")
+	incr := flag.Bool("i", false, "use incremental mode")
+	flag.Parse()
+
+	if *incr {
+		migrateByType(*source, *dest, *count)
+	} else {
+		migrateByDump(*source, *dest, *count)
+	}
 }
