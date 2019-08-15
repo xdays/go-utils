@@ -1,15 +1,7 @@
-# redis-migrate
+# go-utils
 
-## setup
+Utilities written in golang
 
-```
-brew install redis
-./setup.sh start
-cat sample.txt | redis-cli --pipe
-```
+## redis-migrate
 
-## run
-
-```
-go run main.go
-```
+Migrate redis data from one server to another
