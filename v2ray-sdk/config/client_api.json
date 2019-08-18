@@ -1,0 +1,50 @@
+{
+  "log": {
+    "error": "",
+    "loglevel": "info",
+    "access": ""
+  },
+  "inbounds": [
+    {
+      "listen": "127.0.0.1",
+      "protocol": "http",
+      "port": "10084"
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "blockout",
+      "protocol": "blackhole",
+      "settings": {}
+    },
+    {
+      "tag": "crosswall",
+      "protocol": "vmess",
+      "settings": {
+        "vnext": [
+          {
+            "address": "127.0.0.1",
+            "users": [
+              {
+                "id": "a994b3c1-c7cc-4868-8072-c93e491bba0b",
+                "alterId": 64,
+                "level": 0,
+                "security": "aes-128-gcm"
+              }
+            ],
+            "port": 10086
+          }
+        ]
+      }
+    }
+  ],
+  "routing": {
+    "rules": [
+      {
+        "type": "field",
+        "domain": ["domain:ip.cn"],
+        "outboundTag": "crosswall"
+      }
+    ]
+  }
+}
